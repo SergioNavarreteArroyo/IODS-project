@@ -9,7 +9,7 @@ I feel quite excited, because this course looks really well organized and useful
 
 The first chapter has been a great introduction to R. I previously learned about this, but it was great to refresh those concepts, since they are the basis to use R in data science. 
 There was a lot to learn, so it was a bit exhausting and I don't know if I will remember everything, but I enjoyed how well organized it was. It will be easy to go back and check if I don't remember something. In my experience, the most difficult part was arranging and pivoting the database.
-I liked particularly Chapter 4. It was great to know all the visualization possibilities that ggplot offers. This will surely be very useful for me in the future.
+I liked particularly the Chapter 4. It was great to know all the visualization possibilities that ggplot offers. This will surely be very useful for me in the future.
 
 Here is the link of my repository: https://github.com/SergioNavarreteArroyo/IODS-project.git
 
