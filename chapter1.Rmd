@@ -3,12 +3,13 @@
 
 *Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
 
-Hi all! My name is Sergio, and I am eager to learn more about data science in this course! I have heard about this course from some of my colleagues in the Department, and I thought that this is exactly what I needed in order to succeed in my PhD. 
-I feel quite excited, because this course looks really well organized and useful. I am not an expert using R, so I am also a bit nervous regarding mi ability to deal with it. I expect to learn lots of things regarding statistics and data analysis, and hopefully I will include these in my future analyses. 
+Hi all! 
+My name is Sergio, and I am eager to learn more about data science in this course! I have heard about this course from some of my colleagues in the Department, and I thought that this is exactly what I needed in order to succeed in my PhD. 
+I feel quite excited, because this course looks really well organized and useful. I am not an expert using R, so I am also a bit nervous regarding my ability to deal with it. I expect to learn lots of things regarding statistics and data analysis, and hopefully I will include these in my future analyses. 
 
 The first chapter has been a great introduction to R. I previously learned about this, but it was great to refresh those concepts, since they are the basis to use R in data science. 
-There was a lot to learn, so it was a bit exhausting and I don't know if I will remember everything, but I enjoyed how well organized it was. It will be easy to go back and check if I don't remember something. In my experience, the most difficult part was arranging a pivoting the database.
-I liked particularly Chapter 4. It was great to know all the visualization possibilities that ggplot offers. 
+There was a lot to learn, so it was a bit exhausting and I don't know if I will remember everything, but I enjoyed how well organized it was. It will be easy to go back and check if I don't remember something. In my experience, the most difficult part was arranging and pivoting the database.
+I liked particularly Chapter 4. It was great to know all the visualization possibilities that ggplot offers. This will surely be very useful for me in the future.
 
 Here is the link of my repository: https://github.com/SergioNavarreteArroyo/IODS-project.git
 
