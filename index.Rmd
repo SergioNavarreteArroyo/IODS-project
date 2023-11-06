@@ -1,6 +1,6 @@
 ---
 title: "IODS course project"
-author: "Sergio Navarrete Arroyo"
+author: "Sergio Navarrete"
 output:
   html_document:
     theme: cosmo
