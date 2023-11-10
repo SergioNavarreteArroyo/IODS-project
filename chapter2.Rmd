@@ -1,13 +1,95 @@
-# Insert chapter 2 title here
+# Regression and model validation
 
 *Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+First, we will start by reading the data from the following link:  https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/learning2014.txt. Take into consideration that the separator is a comma (,). 
+Then let's explore the dimensions of the data with the functions dim() and str(). We can see that the data consists on a data frame of 166 observations and 7 variables. The gender is a character variable, while the rest are numerical. 
 
 ```{r}
-date()
+lrn14 <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/learning2014.txt", sep=",", header=TRUE)
+dim(lrn14)
+str(lrn14)
+```
+Now we are going to see how is the data. First, we will see the graphical distribution of the numeric variables. We can see that except for the age, the variables follow a normal distribution. 
+
+```{r}
+hist(lrn14$age)
+hist(lrn14$attitude)
+hist(lrn14$deep)
+hist(lrn14$stra)
+hist(lrn14$surf)
+hist(lrn14$points)
+
+```
+Next, let's see the summaries of the vairables. We will see the mean, median, maximum and minimum. 
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+lrn14.sum <- lrn14 %>%
+  select(age, attitude, deep, stra, surf, points) %>% # select variables to summarise
+  summarise_each(funs(min = min, 
+                      q25 = quantile(., 0.25), 
+                      median = median, 
+                      q75 = quantile(., 0.75), 
+                      max = max,
+                      mean = mean, 
+                      sd = sd))
+lrn14.sum
+
+# the result is a wide data frame
+dim(lrn14.sum)
+
+# reshape it using tidyr functions
+
+df.stats.tidy <- lrn14.sum %>% gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, min, q25, median, q75, max, mean, sd) # reorder columns
+
+print(df.stats.tidy)
+
+```
+The next step is looking at possible relationships between the variables through a Pearson Correlation Matrix. We can see that there is a high correlation between the attitude and the points. 
+
+```{r}
+mat_1 <-as.dist(round(cor(lrn14[,2:7]),2))
+mat_1
+
+
+```
+Now I will proceed with the 3rd point of the assignment.
+As explanatory variables, I have chosen: attitude, deep and stra. The outcome variable is the exam points. Since the stra and the deep variables are not significant, we remove them from the model. 
+Interpretation of the results: We can see that the attitude can predict the exam points. Since the Estimate is positive, it means that it is a positive correlation, so the more attitutde the student has, the more points their get. 
+
+```{r}
+library(ggplot2)
+library(GGally)
+
+# create a regression model with multiple explanatory variables
+my_model <- lm(points ~ attitude + stra + deep, data = lrn14)
+
+# print out a summary of the model
+summary(my_model)
+
+#create the new model without the non-significant predictors. 
+my_model2 <- lm(points ~ attitude, data = lrn14)
+summary(my_model2)
+
+```
+Using the summary of the fitted model, what I interpret is that the attitude is the only variable that significantly predicted the outcome variable. We can say that because is the only that showed a p-value minor to 0.05. According with the (***), the p-value is between 0 and 0.001. 
+The estimate is giving us information about the mean increase in exam points for every additional score in attitude. In this case, 3.55 points. This would allow us make prediction based on new data. 
+Also, the R-squared determines the proportion of variance in the dependent variable that can be explained by the independent variable. Then, a 18% of the variance in the points exam is explaiend by the attitude. 
+
+Finally, we will produce the diagnostic plots. 
+The assumptions of the model are (1) Linear relationship between predictors and outcome, (2) Independence of residuals, (3) Normal distribution of residuals, (4) Equal variance of residuals.
+The Residuals vs Fitted plot gives us information about the equal variance of the residuals. We can see that this assumption is acomplished, since the two lines are really similar. 
+The Q-Q plot gives us information about the normal distirbution of the residuals. Again, we see that the residuals are normally distirbuted. 
+Finally, the Residuals vs Leverage plot gives information about the allows us to identify influential observations in a regression model. We can see that there are not influential points, since there are no observaions falling outside the dashed lines.  
+
+```{r}
+par(mfrow = c(2,2))
+plot(my_model, which =c(1,2,5))
 ```
 
-Here we go again...
