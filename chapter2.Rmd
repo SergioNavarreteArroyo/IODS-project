@@ -24,8 +24,7 @@ hist(lrn14$points)
 Next, let's see the summaries of the vairables. We will see the mean, median, maximum and minimum. 
 
 ```{r}
-library(dplyr)
-library(tidyr)
+library(tidyverse)
 
 lrn14.sum <- lrn14 %>%
   select(age, attitude, deep, stra, surf, points) %>% # select variables to summarise
