@@ -2,7 +2,7 @@
 
 *Describe the work you have done this week and summarize your learning.*
 
-First, we will start by reading the data from the following link:  https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/learning2014.txt. Take into consideration that the separator is a comma (,). 
+We will start by reading the data from the following link:  https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/learning2014.txt. Take into consideration that the separator is a comma (,). 
 Then let's explore the dimensions of the data with the functions dim() and str(). We can see that the data consists on a data frame of 166 observations and 7 variables. The gender is a character variable, while the rest are numerical. 
 
 ```{r}
