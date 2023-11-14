@@ -2,6 +2,8 @@
 
 *Describe the work you have done this week and summarize your learning.*
 
+## 1 | Load input data
+
 We will start by reading the data from the following link:  https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/learning2014.txt. Take into consideration that the separator is a comma (,). 
 Then let's explore the dimensions of the data with the functions dim() and str(). We can see that the data consists on a data frame of 166 observations and 7 variables. The gender is a character variable, while the rest are numerical. 
 
@@ -10,62 +12,56 @@ lrn14 <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-
 dim(lrn14)
 str(lrn14)
 ```
+## 2 | Graphical overview of the data and summaries of the variables
+
 Now we are going to see how is the data. First, we will see the graphical distribution of the numeric variables. We can see that except for the age, the variables follow a normal distribution. 
 
 ```{r}
-hist(lrn14$age)
-hist(lrn14$attitude)
-hist(lrn14$deep)
-hist(lrn14$stra)
-hist(lrn14$surf)
-hist(lrn14$points)
+#Ajust the code: Add the argument 'col' to the 'pairs()' function
+pairs(lrn14[, -1])
 
 ```
+```{r}
+library(GGally)
+library(ggplot2)
+
+#Create a more advanced matrix with ggpairs()
+p <- ggpairs(lrn14, mapping = aes(col = gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+print(p)
+```
+
 Next, let's see the summaries of the vairables. We will see the mean, median, maximum and minimum. 
 
 ```{r}
-library(tidyverse)
 
-lrn14.sum <- lrn14 %>%
-  select(age, attitude, deep, stra, surf, points) %>% # select variables to summarise
-  summarise_each(funs(min = min, 
-                      q25 = quantile(., 0.25), 
-                      median = median, 
-                      q75 = quantile(., 0.75), 
-                      max = max,
-                      mean = mean, 
-                      sd = sd))
+lrn14.sum <- summary(lrn14)
 lrn14.sum
 
 # the result is a wide data frame
 dim(lrn14.sum)
 
-# reshape it using tidyr functions
-
-df.stats.tidy <- lrn14.sum %>% gather(stat, val) %>%
-  separate(stat, into = c("var", "stat"), sep = "_") %>%
-  spread(stat, val) %>%
-  select(var, min, q25, median, q75, max, mean, sd) # reorder columns
-
-print(df.stats.tidy)
-
 ```
+```
+
+
 The next step is looking at possible relationships between the variables through a Pearson Correlation Matrix. We can see that there is a high correlation between the attitude and the points. 
 
 ```{r}
 mat_1 <-as.dist(round(cor(lrn14[,2:7]),2))
 mat_1
-
-
 ```
+```{r}
+#Create a plot matrix
+ggpairs(lrn14, lower = list(combo = wrap("facethist", bins = 20)))
+```
+
+## 3 | Regression Model 
+
 Now I will proceed with the 3rd point of the assignment.
 As explanatory variables, I have chosen: attitude, deep and stra. The outcome variable is the exam points. Since the stra and the deep variables are not significant, we remove them from the model. 
 Interpretation of the results: We can see that the attitude can predict the exam points. Since the Estimate is positive, it means that it is a positive correlation, so the more attitutde the student has, the more points their get. 
 
 ```{r}
-library(ggplot2)
-library(GGally)
-
 # create a regression model with multiple explanatory variables
 my_model <- lm(points ~ attitude + stra + deep, data = lrn14)
 
