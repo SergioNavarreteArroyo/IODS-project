@@ -15,7 +15,7 @@ head(alc)
 
 The purpose of the analysis now is to study the relationships between the variables of our data. 
 We will explore the relationship between high/low alcohol consumption and the following 4 variables: health, absences, G1 and G3. To do it, we will create multiple boxplots. 
-Our hypothesis are: 
+Our hypothesis are the following: 
 * * Lower alcohol use is related with a better health.
 * Lower alcohol use is related with a smaller rate of school absence. 
 * Lower alcohol use is related with better grades (G1 and G3 variables)
