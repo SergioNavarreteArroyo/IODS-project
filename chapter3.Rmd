@@ -74,6 +74,7 @@ coef(m)
 ```
 
 And now, we will look at the odds ratios and intervals of confidence. Regarding the absences, we can see that those subjects high higher alcohol consumption had a larger number of absences from school (ODDS larger than 1), although the effect is not really high.
+We can only trust for the absences, since the confidence intervals does not include 1. If it includes 1, we cannot think that the OR is statistically significant. 
 
 ```{r}
 # compute odds ratios (OR)
@@ -85,25 +86,62 @@ cbind(OR, CI)
 ```
 ## 4 | Predicitve power of the model
 
-Now we can look at the predictive power of our model. We will do it by creating a 2x2 cross tabulation. 
+### Predictive power
+
+Refining the model: culling variables that showed no statistical significance
+Health, G1 and G3 will be dropped, absences remain. 
 
 ```{r}
-# predict() the probability of high_use
-probabilities <- predict(m, type = "response")
-
-library(dplyr)
-# add the predicted probabilities to 'alc'
-alc <- mutate(alc, probability = probabilities)
-
-# use the probabilities to make a prediction of high_use
-alc <- mutate(alc, prediction = high_use)
-
-# see the last ten original classes, predicted probabilities, and class predictions
-select(alc, health, absences, G1, G3, high_use, probability, prediction) %>% tail(10)
-
-# tabulate the target variable versus the predictions
-table(high_use = alc$high_use, prediction = alc$prediction)
-
+m <- glm(high_use ~ absences, data = alc, family = "binomial")
 
 ```
 
+Here, we take the model from before, and based on it calculate the probability that a certain subject is considered as a higher alcohol drinker.    
+ 
+
+```{r}
+ 
+alc$predicted_probabilities <- predict(m, type = "response")
+
+alc <- mutate(alc,prediction  = predicted_probabilities > 0.5)  
+
+```
+
+## Comparison of actual values (High use or not) and predicted values. 
+
+
+```{r}
+
+x<-alc %>% select(absences, high_use, predicted_probabilities, prediction) 
+x<-table(high_use = x$high_use, prediction = x$prediction)
+y<-x
+y<-(y/370)*100
+print(x)
+print (y)
+```
+### Penalty function definition
+
+```{r, echo=T}
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5 
+  mean(n_wrong)
+}
+
+```
+
+### Cross validation
+
+```{r, results=T}
+
+
+# K-fold cross-validation
+library(boot)
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+
+```
+The predictors that are looking at now at have a bit higher mean prediction error, but this is not super high. 
