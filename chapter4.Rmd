@@ -1,0 +1,255 @@
+# Clustering and classification
+
+The topics of this chapter - clustering and classification - are handy and visual tools of exploring statistical data. Clustering means that some points (or observations) of the data are in some sense closer to each other than some other points. In other words, the data points do not comprise a homogeneous sample, but instead, it is somehow clustered.
+
+In general, the clustering methods try to find these clusters (or groups) from the data. One of the most typical clustering methods is called k-means clustering. Also hierarchical clustering methods quite popular, giving tree-like dendrograms as their main output.
+
+As such, clusters are easy to find, but what might be the "right" number of clusters? It is not always clear. And how to give these clusters names and interpretations?
+
+Based on a successful clustering, we may try to classify new observations to these clusters and hence validate the results of clustering. Another way is to use various forms of discriminant analysis, which operates with the (now) known clusters, asking: "what makes the difference(s) between these groups (clusters)?"
+
+In the connection of these methods, we also discuss the topic of distance (or dissimilarity or similarity) measures. There are lots of other measures than just the ordinary Euclidean distance, although it is one of the most important ones. Several discrete and even binary measures exist and are widely used for different purposes in various disciplines.
+
+## 1 | Load input data
+
+We will work with the Boston dataset, which can be found in the MASS package in R. Let's load it. 
+```{r}
+# access the MASS package
+library(MASS)
+
+# load the data
+data("Boston")
+```
+
+Now we can look at the structure and dimensions of the data. This dataset has 506 rows and 14 columns, so we can tell that it has 14 variables on it, and 506 observations. 
+The included variables are:
+
+CRIM - per capita crime rate by town
+ZN - proportion of residential land zoned for lots over 25,000 sq.ft.
+INDUS - proportion of non-retail business acres per town.
+CHAS - Charles River dummy variable (1 if tract bounds river; 0 otherwise)
+NOX - nitric oxides concentration (parts per 10 million)
+RM - average number of rooms per dwelling
+AGE - proportion of owner-occupied units built prior to 1940
+DIS - weighted distances to five Boston employment centres
+RAD - index of accessibility to radial highways
+TAX - full-value property-tax rate per $10,000
+PTRATIO - pupil-teacher ratio by town
+B - 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town
+LSTAT - % lower status of the population
+MEDV - Median value of owner-occupied homes in $1000’s
+
+```{r}
+dim(Boston)
+str(Boston)
+head(Boston)
+```
+
+## 2 | Data Overview, standarization and creating new variable
+
+### Data overview
+
+The next step is to visuallize how is the data, as well as to see some summaries of its variables. First, we can look at it as a table
+
+```{r}
+summary(Boston)
+```
+We can see that there are different types of variables. They are all numeric, but they have different scales. Then, in order to be able to compare them, we will have to standarize the dataset. 
+Next, let's see the data graphycally. 
+
+```{r}
+ggpairs(Boston)
+```
+
+Regarding the distributin of the variables, we can see that not all of them have a normal distribution. Some of them, such as the age or the distance to employement centers are skewed. 
+We can also see that the crime rate has a significant correlation with many of the other variables.
+Another interesting issue is that some variables have more than one peak in their distirbution, meaning that there are 2 values more common than others. 
+
+### Standarization
+
+Now we will standarize the variables within this dataset in order to make them comparable. 
+If we look at the summary of both the standarized and the non-standarized data, we can see that the scales have now changes. Now all the variables are in the same scale. 
+
+```{r}
+boston_scaled <- as.data.frame(scale(Boston))
+summary(boston_scaled)
+```
+
+### New categorical variable: Crime
+
+Now we will create a categorical variable of the crime rate in the Boston dataset (from the scaled crime rate). We will use the quantiles as the break points in the categorical variable, and will drop the old crime rate variable from the dataset. Also, we will divide the dataset to train and test sets, so that 80% of the data belongs to the train set.
+
+```{r}
+bins <- quantile(boston_scaled$crim) 
+
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, labels = c("low", "med_low", "med_high", "high"))
+
+boston_scaled <- data.frame(boston_scaled, crime)
+
+boston_scaled$crim<-NULL
+```
+
+```{r}
+n <- nrow(boston_scaled)
+# choose randomly 80% of the rows
+ind <- sample(n,  size = nrow(boston_scaled) * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set 
+test <- boston_scaled[-ind,]
+
+# save the correct classes from test data
+correct_classes <- test$crime
+```
+
+## 3 | Linear discriminant analyses
+
+Now we will tray to find a linear combination of variables that best separates the data into groups. 
+By looking at the plot, we can see that accessibility to radial highways is the variable with the largest impact on LD1. For LD2, there are several variables with similar impacts. 
+We can also see that Nox and Rad are almost perpendicular between them, which means that they do not have correlation. 
+
+```{r}
+lda.fit <- lda(crime ~ . , data = train)
+
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  graphics::arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+classes <- as.numeric(train$crime)
+
+# plot the lda results (select both lines and execute them at the same time!)
+plot(lda.fit, dimen = 2)
+lda.arrows(lda.fit, myscale =2)
+```
+### Testing the prediction power of the model
+
+Now, bu using the train and test datasets that we created before, we will assess the prediction power of this model. This will give us information regarding how well the model we used on the training data actually classifies the test data. 
+
+```{r}
+correct_classes<-test$crime
+test$crime<-NULL
+
+# predict classes with test data
+lda.pred <- predict(lda.fit, newdata = test)
+
+# cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+
+According to this results, we can see that high crime rates are predicted very accurately (90%), but in the rest of cases this is not that good. For example, for low crime rate, there is only a 23% of success. 
+
+## 4 | K-Means
+
+At this point, we will calcuate the distances between our observations. We will run k-means algorithm on the dataset. Then we can investigate what is the optimal number of clusters. 
+
+First, let's calculate the distances between observations and run the algorithm. When we visualize it, we can see that there are too mny clusters, so will need to optimize it. 
+
+```{r}
+data(Boston)
+Boston_scaled<-as.data.frame(scale(Boston))
+
+# calculate distances
+dist_eu <- dist(Boston_scaled)
+
+# k-means clustering
+km <- kmeans(Boston_scaled, centers = "6")
+
+pairs(Boston_scaled[1:6], col=km$cluster)
+```
+A good way to determine a good number of clusters is to look at how the total of within cluster sum of squares (WCSS) behaves when the number of cluster changes. When you plot the number of clusters and the total WCSS, the optimal number of clusters is when the total WCSS drops radically.
+We want to find a K value, for which the variation within each group is as small as possible (i.e. the clusters should be formed with the idea of grouping similar data points together, with as little “wild” variation between points in the same group as possible)
+After running the algorith, we can see that the best number of clusters is 2. 
+
+```{r}
+# MASS, ggplot2 and Boston dataset are available
+set.seed(123)
+
+# determine the number of clusters
+k_max <- 10
+
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(Boston_scaled, k)$tot.withinss})
+
+# visualize the results
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+
+# k-means clustering
+km <- kmeans(Boston_scaled, centers = 2)
+
+```
+
+And now, let's re-run the analysis with k set to 2. 
+
+```{r}
+km <- kmeans(Boston_scaled, centers = 2)
+
+pairs(Boston_scaled[1:5], col = km$cluster)
+```
+
+```{r}
+pairs(Boston_scaled[6:10], col = km$cluster)
+```
+
+### Visualizing clusters and interpreting results
+
+We can observe that the crime rates and the proproty tax values are clustered very separatelly, wich suggests that in poorer neighbourhood there is more crime. 
+
+```{r}
+pairs(Boston_scaled[c(1,10)], col = km$cluster)
+```
+Also, it seems that ihousing value and age show a large cluster in black, with old houses and low value. 
+
+```{r}
+pairs(Boston_scaled[c(7,14)], col = km$cluster)
+```
+## 5 | Bonus task
+
+Lets load original data, standardize, and run K means with 3 clusters
+
+```{r}
+data("Boston")
+
+Boston_scaled<-as.data.frame(scale(Boston))
+
+
+km <- kmeans(Boston_scaled, centers = "5")
+````
+
+
+Then, fit LDA with clusters as the target (dependent)
+
+```{r}
+lda.fit <- lda(km$cluster ~ . , data = Boston_scaled)
+
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  graphics::arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(km$cluster)
+
+# plot the lda results (select both lines and execute them at the same time!)
+plot(lda.fit, dimen = 2)
+lda.arrows(lda.fit, myscale =22)
+```
+```
+Presently, the primary factor influencing Group 1 seems to be its proximity to the riverside. Group 3, on the other hand, appears to be primarily influenced by accessibility to radial highways. The remaining variables exhibit a collective clustering, with no individual variables prominently standing out.
+
+Upon closer examination in the more detailed plot, it becomes apparent that LSTAT holds significance for Group 3, while ZN emerges as a crucial factor for Group 2.
+
+
+
+
