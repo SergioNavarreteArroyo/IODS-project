@@ -1,4 +1,4 @@
-# Dimensionality reduction techniques'
+# Dimensionality reduction techniques
 
 In this chapter, we will learn about dimensionality reduction techniques, and more particularly about the Principal Component Analysis (PCA). PCA is a popular technique for analyzing large datasets containing a high number of dimensions/features per observation, increasing the interpretability of data while preserving the maximum amount of information, and enabling the visualization of multidimensional data. 
 
