@@ -245,7 +245,7 @@ classes <- as.numeric(km$cluster)
 plot(lda.fit, dimen = 2)
 lda.arrows(lda.fit, myscale =22)
 ```
-Presently, the primary factor influencing Group 1 seems to be its proximity to the riverside. Group 3, on the other hand, appears to be primarily influenced by accessibility to radial highways. The remaining variables exhibit a collective clustering, with no individual variables prominently standing out.
+Presently, the main factor influencing Group 1 seems to be its proximity to the riverside. Group 3, on the other hand, appears to be primarily influenced by accessibility to radial highways. The remaining variables exhibit a collective clustering, with no individual variables prominently standing out.
 
 Upon closer examination in the more detailed plot, it becomes apparent that LSTAT holds significance for Group 3, while ZN emerges as a crucial factor for Group 2.
 
