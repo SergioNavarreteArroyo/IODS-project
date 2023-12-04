@@ -1,0 +1,115 @@
+# Dimensionality reduction techniques'
+
+In this chapter, we will learn about dimensionality reduction techniques, and more particularly about the Principal Component Analysis (PCA). PCA is a popular technique for analyzing large datasets containing a high number of dimensions/features per observation, increasing the interpretability of data while preserving the maximum amount of information, and enabling the visualization of multidimensional data. 
+
+In addition, we will learn about the Correspondence Analysis, which can be used when we have categorical variables. 
+
+## 1 | Data Overview
+
+### Intorduction
+
+For this chapter, we will use the data from the UN Development Programme that we wrangled previously. However, it is also avaliable in the following link: https://hdr.undp.org/system/files/documents/technical-notes-calculating-human-development-indices.pdf
+
+The dataset contains variables related to Human Development Index and Gender Inquality. More specifically, the data set contains the following variables: 
+
+* Country
+* PSECED_FM_Ratio: Male/female ratio for length of (and expected) education. Values above 1 mean females are educated for longer.
+* LaborFM_ratio: Male/female ratio for labour participation.
+* LifeExp: Life Expectancy.
+* YoEExp: Length of Education.
+* GNI: GNI Index.
+* MMRatio: Maternal Mortality Ratio. Infant deaths per 10000 births.
+* ABRate: Adolescent Birth Rate.
+* PRP: Share of female parliamentary participation (percentage).
+
+```{r}
+library(tibble)
+library(readr)
+
+human <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human2.csv")
+human <- column_to_rownames(human, "Country")
+summary(human)
+```
+```{r}
+str(human)
+```
+
+### Graphical overview
+
+And now let's visualize how is the data, and we will show summaries of them. We will also look at how the variables are related between each other. 
+
+```{r}
+library(GGally)
+ggpairs(human, progress = FALSE)
+
+```
+```{r}
+library(corrplot)
+cor(human) %>% corrplot()
+```
+
+The two plots provide distinct visualizations of the same correlation information. In the latter plot, correlation strength is represented by circle size, with colors indicating the correlation sign (deep red for negative, deep blue for positive). The distribution of some variables takes on a relatively normal appearance, while others display skewed patterns with extended tails.
+
+Examining the gender-specific labor market participation ratio reveals a lack of notable correlations with other variables. In contrast, maternal mortality shows a strong negative correlation with life expectancy and female education ratio, coupled with a positive correlation with adolescent birth rate—patterns evident in the scatterplots of the initial graph. Significant correlations are also apparent with variables like life expectancy and length of education.
+
+## 2 | Principal Component Analysis
+
+Now, we will perform the PCA as follows: 
+
+```{r}
+library(tibble)
+pca_human <- prcomp(human)
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+
+# rounded percentanges of variance captured by each PC
+pca_pr <- round(1*s$importance[2, ], digits = 5) * 100
+
+# print out the percentages of variance
+pc_lab <- print(pca_pr)
+```
+```{r}
+# create object pc_lab to be used as axis labels
+paste0(names(pca_pr), " (", pca_pr, "%)")
+
+biplot(pca_human,
+       cex = c(0.8, 1),
+       col = c("grey40", "cyan3"),
+       xlab = pc_lab[1],
+       ylab = pc_lab[2])
+
+```
+In the unscaled scenario, the initial component accounts for an impressive 99% of the variance; however, the associated biplot doesn't appear to provide meaningful insights. This dominance can be attributed to GNI, as it singularly captures the entire spectrum with significantly higher values compared to other components
+
+## 3 | Standarized Principal Component Analysis
+Now, we will standarize the variables in the dataset and repeat the analysis. We will se if the results are different. 
+
+```{r}
+#standarize the dataset
+human_std <- scale(human)
+pca_human_scaled <- prcomp(human_std)
+
+# create and print out a summary of pca_human
+s_scaled <- summary(pca_human_scaled)
+
+# rounded percentanges of variance captured by each PC
+pca_pr_scaled <- round(1*s_scaled$importance[2, ], digits = 5) * 100
+
+# print out the percentages of variance
+pc_lab_scaled <- print(pca_pr_scaled)
+```
+Now let's plot it
+
+```{r}
+# create object pc_lab to be used as axis labels
+paste0(names(pca_pr_scaled), " (", pca_pr_scaled, "%)")
+
+biplot(pca_human_scaled,
+       cex = c(0.8, 1),
+       col = c("grey40", "cyan3"),
+       xlab = pc_lab[1],
+       ylab = pc_lab[2])
+```
+From this result, we can see that scaling the data is crucial because it encompasses variables with diverse distributions. The visualization, marked by blue arrows, delineates the correlation direction and strength linked to the components.
+
+Upon scaling, the first two components jointly account for about 70% of the variation. Notably, the second component appears to index female parliamentary participation percentage and labor market participation ratio, leaving the first component to encapsulate the remaining variables, impacting them positively or negatively.

@@ -45,4 +45,27 @@ gii<-gii %>% mutate(PSECED_FM_Ratio = PSECED_F/PSECED_M,
 human<-inner_join(hd, gii, by="Country")
 
 dim(human)
-write.csv(human, "C:\\LocalData\\navarret\\IODS\\IODS-project\\data\\create_alc.csv")
+write.csv(human, "C:\\LocalData\\navarret\\IODS\\IODS-project\\data\\create_human.csv")
+
+#Now we start working with the first part of the Assignment 5. 
+
+#Keep only selected columns
+keep <- c("Country", "PSECED_FM_Ratio", "LaborFM_ratio", "LifeExp", "YoEExp", "GNI", "MMRatio", "ABRate", "PRP")
+human <- select(human, one_of(keep))
+
+# Filter out rows with missing values
+human <- filter(human, complete.cases(human))
+
+#Filter out rows relating to regions
+last <- nrow(human) - 7
+human <- human[1:last, ]
+
+# Look at the data structure
+summary(human)
+str(human)
+
+# Save the file
+library(tidyverse)
+
+setwd("~/Desktop/studies/phd/phd302/IODS-project")
+write.csv(human, "C:\\LocalData\\navarret\\IODS\\IODS-project\\data\\create_human.csv")
