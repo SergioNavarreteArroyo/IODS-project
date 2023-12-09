@@ -1,0 +1,190 @@
+# Analysis of longitudinal data
+
+## Task 1
+
+We will implement the analyses of Chapter 8 of MABS, using the R codes of Exercise Set 6, but using the RATS data instead. 
+
+### Load and plot the data
+
+We will startd by loading the Rats_lng data which was created in the wrangling script, and after that we will re-factorize the class vars.
+
+```{r}
+library(plotrix)
+library(here)
+library(tidyverse)
+RATS<-read.csv(here("C:\\LocalData\\navarret\\IODS\\IODS-project\\data\\rats_lng.csv"))
+RATS$X<-NULL
+RATS$ID<-as.factor(RATS$ID)
+RATS$Group<-as.factor(RATS$Group)
+```
+
+Initial graphical summary of the unstandardized data.
+
+```{r}
+library(ggplot2)
+ggplot(RATS, aes(x = Time, y = Weight , linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(RATS$Weight), max(RATS$Weight)))
+```
+Without standarizing the data, there is not too much to say. We can say that group 1 has the lowest overall weights. 
+Now we will standarize the data and plot it again. 
+
+```{r}
+#Standarize data
+RATS <- RATS %>%
+  group_by(Group) %>%
+  mutate(stdweight = (Weight-mean(Weight))/sd(Weight)) %>%
+  ungroup()
+
+#Plot
+library(ggplot2)
+ggplot(RATS, aes(x = Time, y = stdweight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  scale_y_continuous(name = "standardized weight")
+```
+Standardization enhances the discernment of individual variations within growth curves. Within the first rat group, an additional, previously unnoticed outlier has emerged, displaying a standardized weight that is the lowest among all others in the group. Remarkably, this outlier maintains a consistently low weight, never approaching the levels seen in its counterparts—a reverse tracking phenomenon where the weight starts low and remains persistently low. Group 3 also exhibits a similar rat, although this particular individual undergoes a delayed weight gain, eventually catching up with its group members.
+
+### Aggregate summary graphs
+
+Subsequently, the mean weight along with the standard deviation (SD) is computed to more effectively illustrate the collective behavior of the treatment groups, providing a comprehensive view beyond individual rat variations
+
+```{r}
+library(plotrix)
+RATS <- RATS %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(Weight), se = std.error(Weight)) %>%
+  ungroup()
+
+# Plot the mean profiles
+library(ggplot2)
+ggplot(RATS, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,3)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.95,0.45)) +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+```
+We can clearly see that Group 1 distinctly stands apart, exhibiting a different behavior from Groups 2 and 3. The standard errors (SE) of Groups 1 and 3 largely overlap, indicating that there are not many differences between them.
+
+### Boxplot summary of rat groups mean weights
+
+```{r}
+RATS<-read.csv(here("C:\\LocalData\\navarret\\IODS\\IODS-project\\data\\rats_lng.csv"))
+RATS$X<-NULL
+RATS$ID<-as.factor(RATS$ID)
+RATS$Group<-as.factor(RATS$Group)
+
+Rats_mean <- RATS %>%
+  group_by(Time, Group) %>%
+  summarise( mean=mean(Weight) ) %>%
+  ungroup()
+
+library(ggplot2)
+ggplot(Rats_mean, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(Weight), time 1-22")
+```
+
+Once again, Group 1 stands out, engaging in its unique dynamics characterized by a notably lower mean weight and reduced variability compared to the other groups. Group 2 displays the highest variance in weights within its members, showcasing a diverse range of individual variations. On the other hand, Group 3 boasts the overall highest mean weight, distinguishing itself in this aspect. Notably, there are no identifiable outliers in any of the groups, underscoring the consistency and reliability of the observed weight patterns.
+
+### Statistical Testing
+
+Given the existence of three distinct groups of rats, the conventional 2-sample t test is not a viable tool, as it is designed to accommodate only two groups. Consequently, we are compelled to proceed directly to an analysis of variance (ANOVA) to appropriately assess and compare the variations among the multiple groups.
+
+```{r}
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ Group, data = Rats_mean)
+anova(fit)
+```
+```{r}
+Rats_mean_filtered<-filter(Rats_mean, Group %in% c(2,3))
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ Group, data = Rats_mean_filtered)
+anova(fit)
+```
+The results of the analysis reveal that there is a difference in the weight of the rats between all the treatment groups. Although visually Group 2 and 3 were quite similar, they are staistically different. 
+
+
+## Task 2
+
+In this task, we will implement the analyses of Chapter 9 of MABS, using the R codes of Exercise Set 6, but using the BPRS data.
+
+### Loading data
+
+```{r}
+library(readr)
+library(here)
+BPRS_lng <- read_csv(here("C://LocalData//navarret//IODS//IODS-project//data//BPRS_lng.csv"))
+BPRS_lng$...1<-NULL
+
+#Re-factorize the treatment var
+BPRS_lng$treatment<-as.factor(BPRS_lng$treatment)
+```
+
+### Statistical analysis
+
+Initially, we apply a random intercept model to the BPRS data. Diverging from the standard linear regressions performed with the lm-function, this model accommodates the uniqueness of each test subject by allowing for different regression slope intercept points. Importantly, it deviates from assuming independence among observations, especially pertinent when dealing with data collected from the same patients over time.
+
+Our primary objective is to elucidate the PBRS score, with treatment group and time as key explanatory factors. Here, we designate Subject ID as the random effect, recognizing the variability from one individual to another. Both treatment and time are treated as fixed effects, providing a comprehensive framework for capturing the nuanced dynamics within the dataset.
+
+```{r}
+library(lme4)
+BPRS_RandomInt <- lmer(pbrs ~ Week + treatment + (1 | subject), data = BPRS_lng, REML = FALSE)
+summary(BPRS_RandomInt)
+```
+```{r}
+anova(BPRS_RandomInt)
+```
+The random effects component, representing groups, reveals a substantial variance of 104 and a standard deviation of approximately 7. This highlights the abundant between-individual variation in regression intercepts, emphasizing the diverse nature of individual responses.
+
+To gauge the model's overall fit, we turn to the Akaike Information Criteria (AIC), a valuable tool for model comparison. With a current AIC of 2748, we have a metric for assessing relative model performance – lower AIC values suggest a better fit to the data.
+
+Examining the fixed effects, an intriguing pattern emerges. There is a negative correlation observed between time and BPRS rating, indicating a potential trend over the observed period. On the other hand, there is a positive correlation between group and PBRS, underscoring the influence of group dynamics on the PBRS score.
+
+In this nuanced analysis, we deploy a model featuring both random intercepts and random slopes, providing a comprehensive framework that accounts for both individual variability and the dynamic relationships among the variables.
+
+```{r}
+library(lme4)
+
+BPRS_int_coeff<-lmer(pbrs ~ Week + treatment + (Week | subject), data = BPRS_lng, REML = FALSE)
+
+# print a summary of the model
+summary(BPRS_int_coeff)
+
+# perform an ANOVA test on the two models
+anova(BPRS_int_coeff)
+
+```
+With an improved fit evidenced by a decreased AIC to 2745, our model now outperforms its predecessor, which only allowed intercepts to vary among individuals. The random effects display a significant increase in variance, emphasizing substantial between-individual variation in both intercepts and slopes.
+
+Now we introduce an interaction variable (week x treatment) for a more nuanced analysis. This addition enhances the model's capacity to capture intricate dynamics between time and treatment, contributing to a richer understanding of the data.
+
+```{r}
+library(lme4)
+
+Interaction<-lmer(pbrs ~ Week + treatment + (Week | subject)+Week*treatment, data = BPRS_lng, REML = FALSE)
+
+# print a summary of the model
+summary(Interaction)
+```
+
+```{r}
+# perform an ANOVA test on the two models
+anova(Interaction)
+```
+AIC decreases even further, indicating that the model fits the data better with the interaction than without it.
+
+Now we let's perform the final ANOVA with all three candidate components. 
+
+```{r}
+anova(Interaction,BPRS_int_coeff,BPRS_RandomInt)
+```
+We can see that with each successive refinement of the model, there is a continual enhancement in the AIC. Notably, the pinnacle is reached with the third and final model, where individual variations in both intercept and slope are considered, along with the incorporation of the interaction between time and subject ID. This ultimate model stands out as the optimal fit for the dataset.
